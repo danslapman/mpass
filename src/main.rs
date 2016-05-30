@@ -56,11 +56,21 @@ fn main() {
             let username = value_t!(sm, "username", String).expect("User name");
             let password = value_t!(sm, "password", String).expect("Password");
             let entry = RecordCell { domain: domain, username: username, password: password };
-            store.persist(&entry);
+            store.persist(entry);
             ()
         },
-        Some("show") =>
-            println!("{}", store.read()),
+        Some("show") => {
+            let sm = matches.subcommand_matches("show").unwrap();
+            let domain = value_t!(sm, "domain", String).expect("Domain");
+            match store.read(domain) {
+                None => println!("There is no credentials associated with this domain"),
+                Some(cr) => {
+                    println!("Credentials for {}:", cr.domain);
+                    println!("Username: {}", cr.username);
+                    println!("Password: {}", cr.password);
+                }
+            }
+        },
         _ => {
             let _ = app.clone().print_help();
             ()
