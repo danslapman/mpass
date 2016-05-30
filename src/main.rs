@@ -6,6 +6,8 @@ pub mod domain;
 pub mod store;
 
 use clap::{Arg, App, SubCommand};
+use store::Store;
+use domain::RecordCell;
 
 fn main() {
     let app = Box::new(App::new("mpass")
@@ -42,14 +44,23 @@ fn main() {
             .about("Display an entry by domain")
             .help("Displays an entry associated with given domain (if such entry exists)")
     ));
+    
+    let store = Store { path: "store.bin".to_owned() };
    
     let matches = app.clone().get_matches(); 
         
     match matches.subcommand_name() {
-        Some("add") =>
-            println!("Adding entry..."),
+        Some("add") => {
+            let sm = matches.subcommand_matches("add").unwrap();
+            let domain = value_t!(sm, "domain", String).expect("Domain");
+            let username = value_t!(sm, "username", String).expect("User name");
+            let password = value_t!(sm, "password", String).expect("Password");
+            let entry = RecordCell { domain: domain, username: username, password: password };
+            store.persist(&entry);
+            ()
+        },
         Some("show") =>
-            println!("Showing entry..."),
+            println!("{}", store.read()),
         _ => {
             let _ = app.clone().print_help();
             ()

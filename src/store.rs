@@ -12,7 +12,7 @@ pub struct Store {
 
 impl Store {
     pub fn persist(self, entry: &RecordCell) -> () {
-        let _ = File::open(self.path).unwrap().write(encode(entry, SizeLimit::Infinite).unwrap().as_slice());
+        let _ = File::create(self.path).unwrap().write(encode(entry, SizeLimit::Infinite).unwrap().as_slice());
         ()
     }
     
