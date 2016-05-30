@@ -3,6 +3,7 @@ extern crate bincode;
 extern crate rustc_serialize;
 
 pub mod domain;
+pub mod store;
 
 use clap::{Arg, App, SubCommand};
 
