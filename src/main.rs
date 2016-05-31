@@ -1,6 +1,7 @@
 #[macro_use] extern crate clap;
 extern crate bincode;
 extern crate rustc_serialize;
+extern crate yaml_rust;
 
 pub mod domain;
 pub mod store;
@@ -8,6 +9,9 @@ pub mod store;
 use clap::{Arg, App, SubCommand};
 use store::Store;
 use domain::RecordCell;
+use std::fs::File;
+use std::io::Read;
+use yaml_rust::YamlLoader;
 
 fn main() {
     let app = Box::new(App::new("mpass")
@@ -45,7 +49,17 @@ fn main() {
             .help("Displays an entry associated with given domain (if such entry exists)")
     ));
     
-    let store = Store { path: "store.bin".to_owned() };
+    let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
+    let mpass_dir = home_dir.join(".mpass");
+    
+    let mut config_file_contents = String::new();
+    let _ = File::open(mpass_dir.join("config.yml"))
+        .map(|mut f| f.read_to_string(&mut config_file_contents))
+        .expect("Configuration file is unreadable or does not exist");
+    
+    let config = &YamlLoader::load_from_str(&config_file_contents).expect("Config file has invalid format")[0];
+    
+    let store = Store { path: config["store_location"].as_str().expect("store_location has invalid format").to_owned() };
    
     let matches = app.clone().get_matches(); 
         
