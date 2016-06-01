@@ -5,6 +5,8 @@ use domain::RecordCell;
 
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode, decode};
+use crypter::{encrypt, decrypt};
+use rand::{ Rng, OsRng };
 
 pub struct Store {
     pub path: String,
@@ -14,24 +16,38 @@ pub struct Store {
 impl Store {
     fn read_all(&self) -> Vec<RecordCell> {
         let mut contents = Vec::<u8>::new();
-        let _ = File::open(self.path.clone()).map(|mut f| f.read_to_end(&mut contents));
-        let entries: Vec<RecordCell> = decode(&contents[..]).unwrap_or(Vec::<RecordCell>::new());
-        entries
+        match File::open(self.path.clone()) {
+            Ok(mut f) => {
+                let _ = f.read_to_end(&mut contents);
+                let (iv, data) = contents.split_at(16);
+                let decrypted_data = decrypt(data, self.key.as_slice(), iv).expect("Error while decrypting");
+                let entries: Vec<RecordCell> = decode(decrypted_data.as_slice()).expect("Error while decoding");
+                entries
+            },
+            Err(_) => Vec::<RecordCell>::new()
+        }
+        
     }
     
     pub fn persist(&self, entry: RecordCell) -> () {
         let mut entries = self.read_all();
         entries.push(entry);
+        let encoded_entries = encode(&entries, SizeLimit::Infinite).expect("Error while encoding");
         
-        let _ = File::create(self.path.clone()).unwrap()
-            .write(encode(&entries, SizeLimit::Infinite).unwrap().as_slice()).unwrap();
+        let mut iv: [u8; 16] = [0; 16];
+        let mut rng = OsRng::new().ok().unwrap();
+        rng.fill_bytes(&mut iv);
+        
+        let mut encrypted_entries = encrypt(encoded_entries.as_slice(), self.key.as_slice(), &iv).expect("Error while encrypting");
+        let mut data = Vec::from(&iv[..]);
+        data.append(&mut encrypted_entries);
+        
+        let _ = File::create(self.path.clone()).expect("Error while creating file")
+            .write(data.as_slice()).expect("Error while writing file");
         ()
     }
     
     pub fn read(&self, domain: String) -> Option<RecordCell> {
-        let mut contents = Vec::<u8>::new();
-        let _ = File::open(self.path.clone()).unwrap().read_to_end(&mut contents);
-        let entries: Vec<RecordCell> = decode(&contents[..]).unwrap();
-        entries.into_iter().fold(None, move |acc, el| if el.domain == domain { Some(el) } else { acc })
+        self.read_all().into_iter().fold(None, move |acc, el| if el.domain == domain { Some(el) } else { acc })
     }
 } 
