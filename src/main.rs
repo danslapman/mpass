@@ -74,7 +74,10 @@ fn main() {
     
     let config = &YamlLoader::load_from_str(&config_file_contents).expect("Config file has invalid format")[0];
     
-    let store = Store { path: config["store_location"].as_str().expect("store_location has invalid format").to_owned(), key: bin_key };
+    let store = Store { 
+        path: config["store_location"].as_str().expect("store_location has invalid format").to_owned(), 
+        key: bin_key 
+    };
    
     let matches = app.clone().get_matches(); 
         
