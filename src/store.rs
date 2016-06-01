@@ -7,7 +7,8 @@ use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode, decode};
 
 pub struct Store {
-    pub path: String
+    pub path: String,
+    pub key: Vec<u8>
 }
 
 impl Store {

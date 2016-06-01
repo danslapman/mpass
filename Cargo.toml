@@ -5,7 +5,8 @@ authors = ["Daniil Smirnov <danslapman@gmail.com>"]
 
 [dependencies]
 clap = "2.5"
-# rust-crypto = "^0.2"
+rust-crypto = "^0.2"
 rustc-serialize = "0.3"
 bincode = "0.5"
 yaml-rust = "0.3"
+rand = "0.3"
