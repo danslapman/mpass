@@ -69,15 +69,13 @@ fn main() {
     
     let mut config_file_contents = String::new();
     let _ = File::open(mpass_dir.join("config.yml"))
-        .map(|mut f| f.read_to_string(&mut config_file_contents))
-        .expect("Configuration file is unreadable or does not exist");
-    
-    let config = &YamlLoader::load_from_str(&config_file_contents).expect("Config file has invalid format")[0];
-    
-    let store = Store { 
-        path: config["store_location"].as_str().expect("store_location has invalid format").to_owned(), 
-        key: bin_key 
-    };
+        .map(|mut f| f.read_to_string(&mut config_file_contents));
+   
+    let store_file_path = YamlLoader::load_from_str(&config_file_contents)
+        .map(|cfg| cfg[0]["store_location"].as_str().expect("Config has incorrect format").to_owned())
+        .unwrap_or(mpass_dir.join("store.bin").to_str().unwrap_or("store.bin").to_owned());
+        
+    let store = Store { path: store_file_path, key: bin_key };
    
     let matches = app.clone().get_matches(); 
         
