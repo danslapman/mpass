@@ -57,7 +57,7 @@ impl Store {
     
     pub fn remove(&self, domain: String) -> bool {
         let mut entries = self.read_all();
-        let contains = entries.clone().into_iter().any(|el| el.domain != domain);
+        let contains = entries.clone().into_iter().any(|el| el.domain == domain);
         entries.retain(move |el| el.domain != domain);
         self.write_all(entries);
         contains
