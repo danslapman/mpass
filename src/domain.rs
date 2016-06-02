@@ -1,4 +1,4 @@
-#[derive(RustcEncodable, RustcDecodable, PartialEq)]
+#[derive(RustcEncodable, RustcDecodable, PartialEq, Clone)]
 pub struct RecordCell {
     pub domain: String,
     pub username: String,

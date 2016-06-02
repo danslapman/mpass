@@ -29,9 +29,7 @@ impl Store {
         
     }
     
-    pub fn persist(&self, entry: RecordCell) -> () {
-        let mut entries = self.read_all();
-        entries.push(entry);
+    fn write_all(&self, entries: Vec<RecordCell>) -> () {
         let encoded_entries = encode(&entries, SizeLimit::Infinite).expect("Error while encoding");
         
         let mut iv: [u8; 16] = [0; 16];
@@ -47,7 +45,21 @@ impl Store {
         ()
     }
     
+    pub fn persist(&self, entry: RecordCell) -> () {
+        let mut entries = self.read_all();
+        entries.push(entry);
+        self.write_all(entries);
+    }
+    
     pub fn read(&self, domain: String) -> Option<RecordCell> {
         self.read_all().into_iter().fold(None, move |acc, el| if el.domain == domain { Some(el) } else { acc })
+    }
+    
+    pub fn remove(&self, domain: String) -> bool {
+        let mut entries = self.read_all();
+        let contains = entries.clone().into_iter().any(|el| el.domain != domain);
+        entries.retain(move |el| el.domain != domain);
+        self.write_all(entries);
+        contains
     }
 } 

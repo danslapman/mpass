@@ -51,7 +51,18 @@ fn main() {
                 .index(1))
             .about("Display an entry by domain")
             .help("Displays an entry associated with given domain (if such entry exists)")
-    ));
+        )
+        .subcommand(
+            SubCommand::with_name("drop")
+            .arg(Arg::with_name("domain")
+                .long("domain")
+                .takes_value(true)
+                .required(true)
+                .index(1))
+            .about("Remove an entry by domain")
+            .help("Removes an entry associated with given domain (if such entry exists)")
+        )
+    );
     
     let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
     let mpass_dir = home_dir.join(".mpass");
@@ -99,6 +110,14 @@ fn main() {
                     println!("Username: {}", cr.username);
                     println!("Password: {}", cr.password);
                 }
+            }
+        },
+        Some("drop") => {
+            let sm = matches.subcommand_matches("drop").unwrap();
+            let domain = value_t!(sm, "domain", String).expect("Domain");
+            match store.remove(domain.clone()) {
+                true => println!("Domain {} deleted", domain),
+                false => println!("There is no credentials associated with this domain")
             }
         },
         _ => {
