@@ -19,7 +19,7 @@ use rand::{ Rng, OsRng };
 
 fn main() {
     let app = Box::new(App::new("mpass")
-        .version("0.1")
+        .version("0.2")
         .about("Console password keeper")
         .author("Daniel Slapman <danslapman@gmail.com>")
         .subcommand(
@@ -61,6 +61,11 @@ fn main() {
                 .index(1))
             .about("Remove an entry by domain")
             .help("Removes an entry associated with given domain (if such entry exists)")
+        )
+        .subcommand(
+            SubCommand::with_name("domains")
+            .about("Show domain list")
+            .help("Shows domain list for all credentials in store")
         )
     );
     
@@ -122,9 +127,14 @@ fn main() {
                 false => println!("There is no credentials associated with this domain")
             }
         },
+        Some("domains") => {
+            for domain in store.list_domains() {
+                println!("{}", domain);
+            }
+        }
         _ => {
             let _ = app.clone().print_help();
-            ()
+            println!("");
         }
     }
 }

@@ -44,6 +44,11 @@ impl Store {
             .write(data.as_slice()).expect("Error while writing file");
         ()
     }
+
+    pub fn list_domains(&self) -> Vec<String> {
+        let entries = self.read_all();
+        entries.into_iter().map(|e| e.domain).collect::<Vec<_>>()
+    }
     
     pub fn persist(&self, entry: RecordCell) -> bool {
         let mut entries = self.read_all();
