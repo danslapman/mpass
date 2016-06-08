@@ -97,8 +97,10 @@ fn main() {
             let username = value_t!(sm, "username", String).expect("User name");
             let password = value_t!(sm, "password", String).expect("Password");
             let entry = RecordCell { domain: domain, username: username, password: password };
-            store.persist(entry);
-            ()
+            match store.persist(entry) {
+                false => println!("Credential associated with this domain already exist"),
+                _ => ()
+            }
         },
         Some("show") => {
             let sm = matches.subcommand_matches("show").unwrap();

@@ -45,10 +45,16 @@ impl Store {
         ()
     }
     
-    pub fn persist(&self, entry: RecordCell) -> () {
+    pub fn persist(&self, entry: RecordCell) -> bool {
         let mut entries = self.read_all();
-        entries.push(entry);
-        self.write_all(entries);
+        let contains = entries.clone().into_iter().any(|el| el.domain == entry.domain);
+        if contains {
+            false
+        } else {
+            entries.push(entry);
+            self.write_all(entries);
+            true
+        }
     }
     
     pub fn read(&self, domain: String) -> Option<RecordCell> {
