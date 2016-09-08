@@ -4,9 +4,9 @@ version = "0.2.0"
 authors = ["Daniil Smirnov <danslapman@gmail.com>"]
 
 [dependencies]
-clap = "2.5"
+clap = "2.11"
 rust-crypto = "^0.2"
 rustc-serialize = "0.3"
-bincode = "0.5"
+bincode = "0.6"
 yaml-rust = "0.3"
 rand = "0.3"
