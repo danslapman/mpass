@@ -11,7 +11,7 @@ pub mod crypter;
 
 use clap::{Arg, App, SubCommand};
 use store::Store;
-use domain::RecordCell;
+use domain::Record;
 use std::fs::File;
 use std::io::{Read, Write};
 use yaml_rust::YamlLoader;
@@ -19,7 +19,7 @@ use rand::{ Rng, OsRng };
 
 fn main() {
     let app = Box::new(App::new("mpass")
-        .version("0.2")
+        .version("0.3")
         .about("Console password keeper")
         .author("Daniel Slapman <danslapman@gmail.com>")
         .subcommand(
@@ -101,7 +101,7 @@ fn main() {
             let domain = value_t!(sm, "domain", String).expect("Domain");
             let username = value_t!(sm, "username", String).expect("User name");
             let password = value_t!(sm, "password", String).expect("Password");
-            let entry = RecordCell { domain: domain, username: username, password: password };
+            let entry = Record::Credentials { domain: domain, username: username, password: password };
             match store.persist(entry) {
                 false => println!("Credential associated with this domain already exist"),
                 _ => ()
@@ -110,19 +110,19 @@ fn main() {
         Some("show") => {
             let sm = matches.subcommand_matches("show").unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
-            match store.read(domain) {
-                None => println!("There is no credentials associated with this domain"),
-                Some(cr) => {
-                    println!("Credentials for {}:", cr.domain);
-                    println!("Username: {}", cr.username);
-                    println!("Password: {}", cr.password);
-                }
+            match store.read_credentials(domain) {
+                Some(Record::Credentials {domain: d, username: u, password: p}) => {
+                    println!("Credentials for {}:", d);
+                    println!("Username: {}", u);
+                    println!("Password: {}", p);
+                },
+                _ => println!("There is no credentials associated with this domain")
             }
         },
         Some("drop") => {
             let sm = matches.subcommand_matches("drop").unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
-            match store.remove(domain.clone()) {
+            match store.remove_credentials(domain.clone()) {
                 true => println!("Domain {} deleted", domain),
                 false => println!("There is no credentials associated with this domain")
             }

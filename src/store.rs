@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Read, Write};
 
-use domain::RecordCell;
+use domain::Record;
 
 use bincode::SizeLimit;
 use bincode::rustc_serialize::{encode, decode};
@@ -14,29 +14,30 @@ pub struct Store {
 }
 
 impl Store {
-    fn read_all(&self) -> Vec<RecordCell> {
+    fn read_all(&self) -> Vec<Record> {
         let mut contents = Vec::<u8>::new();
         match File::open(self.path.clone()) {
             Ok(mut f) => {
                 let _ = f.read_to_end(&mut contents);
                 let (iv, data) = contents.split_at(16);
                 let decrypted_data = decrypt(data, self.key.as_slice(), iv).expect("Error while decrypting");
-                let entries: Vec<RecordCell> = decode(decrypted_data.as_slice()).expect("Error while decoding");
+                let entries: Vec<Record> = decode(decrypted_data.as_slice()).expect("Error while decoding");
                 entries
             },
-            Err(_) => Vec::<RecordCell>::new()
+            Err(_) => Vec::<Record>::new()
         }
         
     }
     
-    fn write_all(&self, entries: Vec<RecordCell>) -> () {
+    fn write_all(&self, entries: Vec<Record>) -> () {
         let encoded_entries = encode(&entries, SizeLimit::Infinite).expect("Error while encoding");
         
         let mut iv: [u8; 16] = [0; 16];
         let mut rng = OsRng::new().ok().unwrap();
         rng.fill_bytes(&mut iv);
         
-        let mut encrypted_entries = encrypt(encoded_entries.as_slice(), self.key.as_slice(), &iv).expect("Error while encrypting");
+        let mut encrypted_entries = encrypt(encoded_entries.as_slice(), self.key.as_slice(), &iv)
+            .expect("Error while encrypting");
         let mut data = Vec::from(&iv[..]);
         data.append(&mut encrypted_entries);
         
@@ -47,12 +48,26 @@ impl Store {
 
     pub fn list_domains(&self) -> Vec<String> {
         let entries = self.read_all();
-        entries.into_iter().map(|e| e.domain).collect::<Vec<_>>()
+        entries.into_iter().filter_map(|e| match e {
+            Record::Credentials {domain: d, ..} => Some(d),
+            _ => None
+        }).collect::<Vec<_>>()
+    }
+
+    pub fn list_commands(&self) -> Vec<String> {
+        let entries = self.read_all();
+        entries.into_iter().filter_map(|e| match e {
+            Record::Command { name: n, ..} => Some(n),
+            _ => None
+        }).collect::<Vec<_>>()
     }
     
-    pub fn persist(&self, entry: RecordCell) -> bool {
+    pub fn persist(&self, entry: Record) -> bool {
         let mut entries = self.read_all();
-        let contains = entries.clone().into_iter().any(|el| el.domain == entry.domain);
+        let contains = entries.clone()
+            .into_iter()
+            .filter(|e| e.is_same_case(&entry))
+            .map(|e| e.get_name()).any(|el| el == entry.get_name());
         if contains {
             false
         } else {
@@ -61,15 +76,23 @@ impl Store {
             true
         }
     }
-    
-    pub fn read(&self, domain: String) -> Option<RecordCell> {
-        self.read_all().into_iter().fold(None, move |acc, el| if el.domain == domain { Some(el) } else { acc })
+
+    pub fn read_credentials(&self, domain: String) -> Option<Record> {
+        self.read_all().into_iter().fold(None, move |acc, el| {
+            match el {
+                Record::Credentials { domain: ref dm, ..} if dm.clone() == domain => Some(el.clone()),
+                _ => acc
+            }
+        })
     }
-    
-    pub fn remove(&self, domain: String) -> bool {
+
+    pub fn remove_credentials(&self, domain: String) -> bool {
         let mut entries = self.read_all();
-        let contains = entries.clone().into_iter().any(|el| el.domain == domain);
-        entries.retain(move |el| el.domain != domain);
+        let contains = entries.clone()
+            .into_iter()
+            .filter(|e| e.is_credentials())
+            .map(|e| e.get_name()).any(|el| el == domain);
+        entries.retain(move |el| !(el.is_credentials() && el.get_name() == domain));
         self.write_all(entries);
         contains
     }
