@@ -43,6 +43,21 @@ fn main() {
             .help("Creates a new entry in the storage with given data")
         )
         .subcommand(
+            SubCommand::with_name("store")
+            .arg(Arg::with_name("name")
+                .long("name")
+                .takes_value(true)
+                .required(true)
+                .index(1))
+            .arg(Arg::with_name("command")
+                .long("command")
+                .takes_value(true)
+                .required(true)
+                .index(2))
+            .about("Stores shell command into storage")
+            .help("Creates new named command with given command line")
+        )
+        .subcommand(
             SubCommand::with_name("show")
             .arg(Arg::with_name("domain")
                 .long("domain")
@@ -53,19 +68,34 @@ fn main() {
             .help("Displays an entry associated with given domain (if such entry exists)")
         )
         .subcommand(
-            SubCommand::with_name("drop")
-            .arg(Arg::with_name("domain")
-                .long("domain")
+            SubCommand::with_name("run")
+            .arg(Arg::with_name("name")
+                .long("name")
                 .takes_value(true)
                 .required(true)
                 .index(1))
-            .about("Remove an entry by domain")
-            .help("Removes an entry associated with given domain (if such entry exists)")
+            .about("Runs command")
+            .help("Runs command by given name")
+        )
+        .subcommand(
+            SubCommand::with_name("drop")
+            .arg(Arg::with_name("name")
+                .long("name")
+                .takes_value(true)
+                .required(true)
+                .index(1))
+            .about("Remove an entry by domain/name")
+            .help("Removes an entry associated with given domain/name (if such entry exists)")
         )
         .subcommand(
             SubCommand::with_name("domains")
             .about("Show domain list")
             .help("Shows domain list for all credentials in store")
+        )
+        .subcommand(
+            SubCommand::with_name("commands")
+            .about("Show stored commands")
+            .help("Shows list of stored shell commands")
         )
     );
     
@@ -93,8 +123,8 @@ fn main() {
         
     let store = Store { path: store_file_path, key: bin_key };
    
-    let matches = app.clone().get_matches(); 
-        
+    let matches = app.clone().get_matches();
+
     match matches.subcommand_name() {
         Some("add") => {
             let sm = matches.subcommand_matches("add").unwrap();
@@ -103,7 +133,17 @@ fn main() {
             let password = value_t!(sm, "password", String).expect("Password");
             let entry = Record::Credentials { domain: domain, username: username, password: password };
             match store.persist(entry) {
-                false => println!("Credential associated with this domain already exist"),
+                false => println!("An item associated with this name already exist"),
+                _ => ()
+            }
+        },
+        Some("store") => {
+            let sm = matches.subcommand_matches("store").unwrap();
+            let name = value_t!(sm, "name", String).expect("Name");
+            let cmd = value_t!(sm, "command", String).expect("Command");
+            let entry = Record::Command { name: name, command_line: cmd };
+            match store.persist(entry) {
+                false => println!("An item associated with this name already exist"),
                 _ => ()
             }
         },
@@ -121,17 +161,22 @@ fn main() {
         },
         Some("drop") => {
             let sm = matches.subcommand_matches("drop").unwrap();
-            let domain = value_t!(sm, "domain", String).expect("Domain");
-            match store.remove_credentials(domain.clone()) {
-                true => println!("Domain {} deleted", domain),
-                false => println!("There is no credentials associated with this domain")
+            let domain = value_t!(sm, "name", String).expect("Domain/name");
+            match store.remove(domain.clone()) {
+                true => println!("Item named '{}' deleted", domain),
+                false => println!("There is no item associated with this name")
             }
         },
         Some("domains") => {
             for domain in store.list_domains() {
                 println!("{}", domain);
             }
-        }
+        },
+        Some("commands") => {
+            for command in store.list_commands() {
+                println!("{}", command);
+            }
+        },
         _ => {
             let _ = app.clone().print_help();
             println!("");

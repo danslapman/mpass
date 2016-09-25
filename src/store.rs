@@ -86,13 +86,12 @@ impl Store {
         })
     }
 
-    pub fn remove_credentials(&self, domain: String) -> bool {
+    pub fn remove(&self, name: String) -> bool {
         let mut entries = self.read_all();
         let contains = entries.clone()
             .into_iter()
-            .filter(|e| e.is_credentials())
-            .map(|e| e.get_name()).any(|el| el == domain);
-        entries.retain(move |el| !(el.is_credentials() && el.get_name() == domain));
+            .map(|e| e.get_name()).any(|el| el == name);
+        entries.retain(move |el| el.get_name() != name);
         self.write_all(entries);
         contains
     }
