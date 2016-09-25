@@ -14,6 +14,7 @@ use store::Store;
 use domain::Record;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::process::Command;
 use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
 
@@ -157,6 +158,24 @@ fn main() {
                     println!("Password: {}", p);
                 },
                 _ => println!("There is no credentials associated with this domain")
+            }
+        },
+        Some("run") => {
+            let sm = matches.subcommand_matches("run").unwrap();
+            let name = value_t!(sm, "name", String).expect("Name");
+            match store.read_cmd(name) {
+                Some(Record::Command {name: n, command_line: cmd}) => {
+                    println!("Executing {}", n);
+                    let parts = cmd.split(" ").collect::<Vec<&str>>();
+
+                    let mut command = Command::new(parts[0]);
+                    for i in 1 .. parts.len() {
+                        command.arg(parts[i]);
+                    }
+
+                    command.status().expect("command failed to start");
+                },
+                _ => println!("There is no command associated with given name")
             }
         },
         Some("drop") => {

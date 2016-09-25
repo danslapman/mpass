@@ -86,6 +86,15 @@ impl Store {
         })
     }
 
+    pub fn read_cmd(&self, name: String) -> Option<Record> {
+        self.read_all().into_iter().fold(None, move |acc, el| {
+            match el {
+                Record::Command { name: ref nm, ..} if nm.clone() == name => Some(el.clone()),
+                _ => acc
+            }
+        })
+    }
+
     pub fn remove(&self, name: String) -> bool {
         let mut entries = self.read_all();
         let contains = entries.clone()
