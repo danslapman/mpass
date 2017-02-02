@@ -4,7 +4,7 @@ version = "0.3.0"
 authors = ["Daniil Smirnov <danslapman@gmail.com>"]
 
 [dependencies]
-clap = "2.13"
+clap = "2.20"
 rust-crypto = "^0.2"
 rustc-serialize = "0.3"
 bincode = "0.6"
