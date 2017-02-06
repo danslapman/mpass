@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate clap;
+#[macro_use] extern crate clap;
+#[macro_use] extern crate mdo;
 extern crate bincode;
 extern crate rustc_serialize;
 extern crate yaml_rust;
@@ -12,9 +12,10 @@ pub mod crypter;
 
 use store::Store;
 use domain::Record;
+use mdo::result::{bind, ret};
 use std::fs::File;
 use std::path::Path;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::process::{Command, exit};
 use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
@@ -64,7 +65,7 @@ fn main() {
 
     let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
     let mpass_dir = home_dir.join(".mpass");
-    
+
     let mut bin_key = Vec::<u8>::new();
     let _ = File::open(mpass_dir.join("key.bin")).map(|mut f| f.read_to_end(&mut bin_key));
     if bin_key.len() == 0 {
@@ -74,6 +75,27 @@ fn main() {
         bin_key = Vec::from(&rnd_key[..]);
         let _ = File::create(mpass_dir.join("key.bin")).unwrap()
             .write(&rnd_key[..]).unwrap();
+    }
+
+    let config_path = mpass_dir.join("config.yml");
+
+    if !Path::new(&config_path).exists() {
+        println!("Please, type path to the store (default is {{home}}/.mpass/store.bin)");
+        println!("(New store will be created if file does not exist):");
+        let mut buffer = String::new();
+        let creation_process = mdo! {
+            _ =<< io::stdin().read_line(&mut buffer);
+            let trimmed_buffer = buffer.trim();
+            let store_path = if trimmed_buffer.is_empty() {
+                    home_dir.join(".mpass").join("store.bin").to_string_lossy().into_owned()
+                } else {
+                    trimmed_buffer.to_owned()
+                };
+            let line = format!("store_location: {}", store_path);
+            _ =<< File::create(config_path)?.write_all(line.as_bytes());
+            ret ret(())
+        };
+        creation_process.expect("Fatal error during configuration file creation!");
     }
     
     let mut config_file_contents = String::new();
@@ -165,7 +187,7 @@ fn main() {
         },
         _ => {
             let _ = mpass_app.clone().print_help();
-            println!("");
+            println!();
         }
     }
 }
