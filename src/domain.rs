@@ -19,10 +19,4 @@ impl Record {
             _ => false
         }
     }
-
-    pub fn is_credentials(&self) -> bool {
-        match *self {
-            Record::Credentials {..} => true, _ => false
-        }
-    }
 }
