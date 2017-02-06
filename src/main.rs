@@ -13,8 +13,9 @@ pub mod crypter;
 use store::Store;
 use domain::Record;
 use std::fs::File;
+use std::path::Path;
 use std::io::{Read, Write};
-use std::process::Command;
+use std::process::{Command, exit};
 use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
 
@@ -82,6 +83,11 @@ fn main() {
     let store_file_path = YamlLoader::load_from_str(&config_file_contents)
         .map(|cfg| cfg[0]["store_location"].as_str().expect("Config has incorrect format").to_owned())
         .unwrap_or(mpass_dir.join("store.bin").to_str().unwrap_or("store.bin").to_owned());
+
+    if Path::new(&store_file_path).is_dir() {
+        println!("`store_location` must be file, not directory!");
+        exit(1)
+    }
         
     let store = Store { path: store_file_path, key: bin_key };
    
