@@ -1,10 +1,12 @@
 #[macro_use] extern crate clap;
 #[macro_use] extern crate mdo;
+#[macro_use] extern crate serde_derive;
 extern crate bincode;
 extern crate rustc_serialize;
 extern crate yaml_rust;
 extern crate crypto;
 extern crate rand;
+extern crate serde_json;
 
 pub mod domain;
 pub mod store;
@@ -61,6 +63,11 @@ fn main() {
             (about: "Show stored commands")
             (help: "Shows list of stored shell commands")
         )
+        (@subcommand export =>
+            (about: "Export data")
+            (help: "Writes all the data into given file in JSON format")
+            (@arg file: +required +takes_value)
+        )
     );
 
     let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
@@ -92,7 +99,8 @@ fn main() {
                     trimmed_buffer.to_owned()
                 };
             let line = format!("store_location: {}", store_path);
-            _ =<< File::create(config_path)?.write_all(line.as_bytes());
+            mut f =<< File::create(config_path);
+            _ =<< f.write_all(line.as_bytes());
             ret ret(())
         };
         creation_process.expect("Fatal error during configuration file creation!");
@@ -185,6 +193,21 @@ fn main() {
                 println!("{}", command);
             }
         },
+        Some("export") => {
+            let sm = matches.subcommand_matches("export").unwrap();
+            let file = value_t!(sm, "file", String).expect("File");
+
+            let json = serde_json::to_string_pretty(&store.export_all_items())
+                .expect("Fatal error during serialization");
+
+            let write_res = mdo ! {
+                mut f =<< File::create(file);
+                res =<< f.write_all(json.as_bytes());
+                ret ret(res)
+            };
+            write_res.expect("Unrecoverable error!");
+            ()
+        }
         _ => {
             let _ = mpass_app.clone().print_help();
             println!();

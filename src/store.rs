@@ -104,4 +104,8 @@ impl Store {
         self.write_all(entries);
         contains
     }
+
+    pub fn export_all_items(&self) -> Vec<Record> {
+        self.read_all()
+    }
 } 

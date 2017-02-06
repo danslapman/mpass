@@ -1,4 +1,4 @@
-#[derive(RustcEncodable, RustcDecodable, PartialEq, Clone)]
+#[derive(RustcEncodable, RustcDecodable, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Record {
     Credentials { domain: String, username: String, password: String },
     Command { name: String, command_line: String }
