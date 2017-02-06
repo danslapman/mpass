@@ -68,6 +68,11 @@ fn main() {
             (help: "Writes all the data into given file in JSON format")
             (@arg file: +required +takes_value)
         )
+        (@subcommand import =>
+            (about: "Import data")
+            (help: "Import data from JSON file")
+            (@arg file: +required +takes_value)
+        )
     );
 
     let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
@@ -207,7 +212,31 @@ fn main() {
             };
             write_res.expect("Unrecoverable error!");
             ()
-        }
+        },
+        Some("import") => {
+            let sm = matches.subcommand_matches("import").unwrap();
+            let file = value_t!(sm, "file", String).expect("File");
+
+            let mut read_buf = String::new();
+            let str_data = mdo! {
+                mut f =<< File::open(file);
+                _ =<< f.read_to_string(&mut read_buf);
+                ret ret(read_buf)
+            }.expect("Can't read provided file");
+
+            let import_data: Vec<Record> =
+                serde_json::from_str(&str_data).expect("Deserialization problem");
+
+            let store_res = import_data.into_iter()
+                .map(|record| store.persist(record))
+                .all(|flag| flag);
+
+            if store_res {
+                println!("Data imported sucessfully");
+            } else {
+                println!("Some records duplicate existing entries and were not imported");
+            }
+        },
         _ => {
             let _ = mpass_app.clone().print_help();
             println!();
