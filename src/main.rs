@@ -1,4 +1,5 @@
-#[macro_use] extern crate clap;
+#[macro_use]
+extern crate clap;
 extern crate bincode;
 extern crate rustc_serialize;
 extern crate yaml_rust;
@@ -9,7 +10,6 @@ pub mod domain;
 pub mod store;
 pub mod crypter;
 
-use clap::{Arg, App, SubCommand};
 use store::Store;
 use domain::Record;
 use std::fs::File;
@@ -19,87 +19,48 @@ use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
 
 fn main() {
-    let app = Box::new(App::new("mpass")
-        .version("0.3")
-        .about("Console password keeper")
-        .author("Daniel Slapman <danslapman@gmail.com>")
-        .subcommand(
-            SubCommand::with_name("add")
-            .arg(Arg::with_name("domain")
-                .long("domain")
-                .takes_value(true)
-                .required(true)
-                .index(1))
-            .arg(Arg::with_name("username")
-                .long("username")
-                .takes_value(true)
-                .required(true)
-                .index(2))
-            .arg(Arg::with_name("password")
-                .long("password")
-                .takes_value(true)
-                .required(true)
-                .index(3))
-            .about("Add an entry to storage")
-            .help("Creates a new entry in the storage with given data")
+    let mpass_app = clap_app!(mpass_app =>
+        (version: "0.3")
+        (author: "Daniel Slapman <danslapman@gmail.com>")
+        (about: "Console password keeper")
+        (@subcommand add =>
+            (about: "Add an entry to storage")
+            (help: "Creates a new entry in the storage with given data")
+            (@arg domain: +required +takes_value)
+            (@arg username: +required +takes_value)
+            (@arg password: +required +takes_value)
         )
-        .subcommand(
-            SubCommand::with_name("store")
-            .arg(Arg::with_name("name")
-                .long("name")
-                .takes_value(true)
-                .required(true)
-                .index(1))
-            .arg(Arg::with_name("command")
-                .long("command")
-                .takes_value(true)
-                .required(true)
-                .index(2))
-            .about("Stores shell command into storage")
-            .help("Creates new named command with given command line")
+        (@subcommand store =>
+            (about: "Stores shell command")
+            (help: "Creates new named command with given command line")
+            (@arg name: +required +takes_value)
+            (@arg command: +required +takes_value)
         )
-        .subcommand(
-            SubCommand::with_name("show")
-            .arg(Arg::with_name("domain")
-                .long("domain")
-                .takes_value(true)
-                .required(true)
-                .index(1))
-            .about("Display an entry by domain")
-            .help("Displays an entry associated with given domain (if such entry exists)")
+        (@subcommand show =>
+            (about: "Display an entry by domain")
+            (help: "Displays an entry associated with given domain (if such entry exists)")
+            (@arg domain: +required +takes_value)
         )
-        .subcommand(
-            SubCommand::with_name("run")
-            .arg(Arg::with_name("name")
-                .long("name")
-                .takes_value(true)
-                .required(true)
-                .index(1))
-            .about("Runs command")
-            .help("Runs command by given name")
+        (@subcommand run =>
+            (about: "Runs command")
+            (help: "Runs command by given name")
+            (@arg name: +required +takes_value)
         )
-        .subcommand(
-            SubCommand::with_name("drop")
-            .arg(Arg::with_name("name")
-                .long("name")
-                .takes_value(true)
-                .required(true)
-                .index(1))
-            .about("Remove an entry by domain/name")
-            .help("Removes an entry associated with given domain/name (if such entry exists)")
+        (@subcommand drop =>
+            (about: "Remove an entry by domain/name")
+            (help: "Removes an entry associated with given domain/name (if such entry exists)")
+            (@arg name: +required +takes_value)
         )
-        .subcommand(
-            SubCommand::with_name("domains")
-            .about("Show domain list")
-            .help("Shows domain list for all credentials in store")
+        (@subcommand domains =>
+            (about: "Show domain list")
+            (help: "Shows domain list for all credentials in store")
         )
-        .subcommand(
-            SubCommand::with_name("commands")
-            .about("Show stored commands")
-            .help("Shows list of stored shell commands")
+        (@subcommand commands =>
+            (about: "Show stored commands")
+            (help: "Shows list of stored shell commands")
         )
     );
-    
+
     let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
     let mpass_dir = home_dir.join(".mpass");
     
@@ -124,7 +85,7 @@ fn main() {
         
     let store = Store { path: store_file_path, key: bin_key };
    
-    let matches = app.clone().get_matches();
+    let matches = mpass_app.clone().get_matches();
 
     match matches.subcommand_name() {
         Some("add") => {
@@ -197,7 +158,7 @@ fn main() {
             }
         },
         _ => {
-            let _ = app.clone().print_help();
+            let _ = mpass_app.clone().print_help();
             println!("");
         }
     }
