@@ -23,9 +23,14 @@ use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
 use rustc_serialize::base64::*;
 
+fn rand_string(len: usize) -> String {
+    let mut rng = rand::thread_rng();
+    (0..len).map(|_| rng.gen_range(b'!', b'~') as char).collect()
+}
+
 fn main() {
-    let mpass_app = clap_app!(mpass_app =>
-        (version: "0.4.1")
+    let mpass_app = clap_app!(mpass =>
+        (version: "0.5")
         (author: "Daniel Slapman <danslapman@gmail.com>")
         (about: "Console password keeper")
         (@subcommand add =>
@@ -33,7 +38,9 @@ fn main() {
             (help: "Creates a new entry in the storage with given data")
             (@arg domain: +required +takes_value)
             (@arg username: +required +takes_value)
-            (@arg password: +required +takes_value)
+            (@arg password: +required +takes_value conflicts_with[randpass])
+            (@arg randpass: -r --rand "Generate random password")
+            (@arg passlen: -l --len +takes_value requires[randpass])
         )
         (@subcommand store =>
             (about: "Stores shell command")
@@ -136,7 +143,8 @@ fn main() {
             let sm = matches.subcommand_matches("add").unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
             let username = value_t!(sm, "username", String).expect("User name");
-            let password = value_t!(sm, "password", String).expect("Password");
+            let gen_len = value_t!(sm, "passlen", usize).unwrap_or(20);
+            let password = value_t!(sm, "password", String).unwrap_or(rand_string(gen_len));
             let entry = Record::Credentials { domain: domain, username: username, password: password };
             match store.persist(entry) {
                 false => println!("An item associated with this name already exist"),
