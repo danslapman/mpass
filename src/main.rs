@@ -21,6 +21,7 @@ use std::io::{self, Read, Write};
 use std::process::{Command, exit};
 use yaml_rust::YamlLoader;
 use rand::{ Rng, OsRng };
+use rustc_serialize::base64::*;
 
 fn main() {
     let mpass_app = clap_app!(mpass_app =>
@@ -66,7 +67,8 @@ fn main() {
         (@subcommand export =>
             (about: "Export data")
             (help: "Writes all the data into given file in JSON format")
-            (@arg file: +required +takes_value)
+            (@arg file: +required +takes_value conflicts_with[key])
+            (@arg key: --key "Export key")
         )
         (@subcommand import =>
             (about: "Import data")
@@ -124,7 +126,7 @@ fn main() {
         exit(1)
     }
         
-    let store = Store { path: store_file_path, key: bin_key };
+    let store = Store { path: store_file_path, key: bin_key.clone() };
    
     let matches = mpass_app.clone().get_matches();
 
@@ -200,18 +202,21 @@ fn main() {
         },
         Some("export") => {
             let sm = matches.subcommand_matches("export").unwrap();
-            let file = value_t!(sm, "file", String).expect("File");
+            if sm.is_present("key") {
+                println!("Your encryption key: {}", bin_key.to_base64(STANDARD));
+            } else {
+                let file = value_t!(sm, "file", String).expect("File");
 
-            let json = serde_json::to_string_pretty(&store.export_all_items())
-                .expect("Fatal error during serialization");
+                let json = serde_json::to_string_pretty(&store.export_all_items())
+                    .expect("Fatal error during serialization");
 
-            let write_res = mdo ! {
-                mut f =<< File::create(file);
-                res =<< f.write_all(json.as_bytes());
-                ret ret(res)
-            };
-            write_res.expect("Unrecoverable error!");
-            ()
+                let write_res = mdo! {
+                    mut f =<< File::create(file);
+                    res =<< f.write_all(json.as_bytes());
+                    ret ret(res)
+                };
+                write_res.expect("Unrecoverable error!");
+            }
         },
         Some("import") => {
             let sm = matches.subcommand_matches("import").unwrap();
