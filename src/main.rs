@@ -25,7 +25,7 @@ use rustc_serialize::base64::*;
 
 fn main() {
     let mpass_app = clap_app!(mpass_app =>
-        (version: "0.3")
+        (version: "0.4")
         (author: "Daniel Slapman <danslapman@gmail.com>")
         (about: "Console password keeper")
         (@subcommand add =>
