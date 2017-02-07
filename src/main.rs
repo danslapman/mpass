@@ -25,7 +25,7 @@ use rustc_serialize::base64::*;
 
 fn main() {
     let mpass_app = clap_app!(mpass_app =>
-        (version: "0.4")
+        (version: "0.4.1")
         (author: "Daniel Slapman <danslapman@gmail.com>")
         (about: "Console password keeper")
         (@subcommand add =>
@@ -74,7 +74,7 @@ fn main() {
             (about: "Import data")
             (help: "Import data from JSON file")
             (@arg file: +required +takes_value conflicts_with[key])
-            (@arg key: -k --key "Import encryption key")
+            (@arg key: -k --key +takes_value "Import encryption key")
         )
     );
 
