@@ -15,7 +15,7 @@ pub mod crypter;
 use store::Store;
 use domain::Record;
 use mdo::result::{bind, ret};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::path::Path;
 use std::io::{self, Read, Write};
 use std::process::{Command, exit};
@@ -68,12 +68,13 @@ fn main() {
             (about: "Export data")
             (help: "Writes all the data into given file in JSON format")
             (@arg file: +required +takes_value conflicts_with[key])
-            (@arg key: --key "Export key")
+            (@arg key: -k --key "Export encryption key")
         )
         (@subcommand import =>
             (about: "Import data")
             (help: "Import data from JSON file")
-            (@arg file: +required +takes_value)
+            (@arg file: +required +takes_value conflicts_with[key])
+            (@arg key: -k --key "Import encryption key")
         )
     );
 
@@ -220,26 +221,52 @@ fn main() {
         },
         Some("import") => {
             let sm = matches.subcommand_matches("import").unwrap();
-            let file = value_t!(sm, "file", String).expect("File");
+            match value_t!(sm, "key", String).ok() {
+                Some(key) => {
+                    if store.export_all_items().len() > 0 {
+                        println!("Can't import key: store is not empty!");
+                        exit(1)
+                    }
 
-            let mut read_buf = String::new();
-            let str_data = mdo! {
-                mut f =<< File::open(file);
-                _ =<< f.read_to_string(&mut read_buf);
-                ret ret(read_buf)
-            }.expect("Can't read provided file");
+                    let new_key = key.from_base64()
+                        .expect("Provided key is not valid base64 string!");
 
-            let import_data: Vec<Record> =
-                serde_json::from_str(&str_data).expect("Deserialization problem");
+                    if new_key.len() != 32 {
+                        println!("You must provide 256-bit key");
+                        exit(1)
+                    }
 
-            let store_res = import_data.into_iter()
-                .map(|record| store.persist(record))
-                .all(|flag| flag);
+                    let import_proc = mdo! {
+                        mut f =<< OpenOptions::new().write(true).open(mpass_dir.join("key.bin"));
+                        _ =<< f.write(&new_key[..]);
+                        ret ret(())
+                    };
 
-            if store_res {
-                println!("Data imported sucessfully");
-            } else {
-                println!("Some records duplicate existing entries and were not imported");
+                    import_proc.expect("Key import failed");
+                },
+                None => {
+                    let file = value_t!(sm, "file", String).expect("File");
+
+                    let mut read_buf = String::new();
+                    let str_data = mdo! {
+                        mut f =<< File::open(file);
+                        _ =<< f.read_to_string(&mut read_buf);
+                        ret ret(read_buf)
+                    }.expect("Can't read provided file");
+
+                    let import_data: Vec<Record> =
+                    serde_json::from_str(&str_data).expect("Deserialization problem");
+
+                    let store_res = import_data.into_iter()
+                        .map(|record| store.persist(record))
+                        .all(|flag| flag);
+
+                    if store_res {
+                        println!("Data imported sucessfully");
+                    } else {
+                        println!("Some records duplicate existing entries and were not imported");
+                    }
+                }
             }
         },
         _ => {
