@@ -92,11 +92,11 @@ fn main() {
     let _ = File::open(mpass_dir.join("key.bin")).map(|mut f| f.read_to_end(&mut bin_key));
     if bin_key.len() == 0 {
         let mut rnd_key: [u8; 32] = [0; 32];
-        let mut rng = OsRng::new().ok().unwrap();
+        let mut rng = OsRng::new().expect("Failed to create random number generator");
         rng.fill_bytes(&mut rnd_key);
         bin_key = Vec::from(&rnd_key[..]);
-        let _ = File::create(mpass_dir.join("key.bin")).unwrap()
-            .write(&rnd_key[..]).unwrap();
+        let _ = File::create(mpass_dir.join("key.bin")).expect("Error creating key file")
+            .write(&rnd_key[..]).expect("Error writing key file");
     }
 
     let config_path = mpass_dir.join("config.yml");
@@ -140,7 +140,7 @@ fn main() {
 
     match matches.subcommand_name() {
         Some("add") => {
-            let sm = matches.subcommand_matches("add").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
             let username = value_t!(sm, "username", String).expect("User name");
             let gen_len = value_t!(sm, "passlen", usize).unwrap_or(20);
@@ -152,7 +152,7 @@ fn main() {
             }
         },
         Some("store") => {
-            let sm = matches.subcommand_matches("store").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let name = value_t!(sm, "name", String).expect("Name");
             let cmd = value_t!(sm, "command", String).expect("Command");
             let entry = Record::Command { name: name, command_line: cmd };
@@ -162,7 +162,7 @@ fn main() {
             }
         },
         Some("show") => {
-            let sm = matches.subcommand_matches("show").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
             match store.read_credentials(domain) {
                 Some(Record::Credentials {domain: d, username: u, password: p}) => {
@@ -174,7 +174,7 @@ fn main() {
             }
         },
         Some("run") => {
-            let sm = matches.subcommand_matches("run").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let name = value_t!(sm, "name", String).expect("Name");
             match store.read_cmd(name) {
                 Some(Record::Command {name: n, command_line: cmd}) => {
@@ -192,7 +192,7 @@ fn main() {
             }
         },
         Some("drop") => {
-            let sm = matches.subcommand_matches("drop").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let domain = value_t!(sm, "name", String).expect("Domain/name");
             match store.remove(domain.clone()) {
                 true => println!("Item named '{}' deleted", domain),
@@ -210,7 +210,7 @@ fn main() {
             }
         },
         Some("export") => {
-            let sm = matches.subcommand_matches("export").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             if sm.is_present("key") {
                 println!("Your encryption key: {}", bin_key.to_base64(STANDARD));
             } else {
@@ -228,7 +228,7 @@ fn main() {
             }
         },
         Some("import") => {
-            let sm = matches.subcommand_matches("import").unwrap();
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             match value_t!(sm, "key", String).ok() {
                 Some(key) => {
                     if store.export_all_items().len() > 0 {

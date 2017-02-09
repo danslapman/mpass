@@ -33,7 +33,7 @@ impl Store {
         let encoded_entries = encode(&entries, SizeLimit::Infinite).expect("Error while encoding");
         
         let mut iv: [u8; 16] = [0; 16];
-        let mut rng = OsRng::new().ok().unwrap();
+        let mut rng = OsRng::new().expect("Failed to create random number generator");
         rng.fill_bytes(&mut iv);
         
         let mut encrypted_entries = encrypt(encoded_entries.as_slice(), self.key.as_slice(), &iv)
