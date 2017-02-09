@@ -104,8 +104,8 @@ fn main() {
     if !Path::new(&config_path).exists() {
         println!("Please, type path to the store (default is {{home}}/.mpass/store.bin)");
         println!("(New store will be created if file does not exist):");
-        let mut buffer = String::new();
         let creation_process = mdo! {
+            let mut buffer = String::new();
             _ =<< io::stdin().read_line(&mut buffer);
             let trimmed_buffer = buffer.trim();
             let store_path = if trimmed_buffer.is_empty() {
@@ -255,8 +255,8 @@ fn main() {
                 None => {
                     let file = value_t!(sm, "file", String).expect("File");
 
-                    let mut read_buf = String::new();
                     let str_data = mdo! {
+                        let mut read_buf = String::new();
                         mut f =<< File::open(file);
                         _ =<< f.read_to_string(&mut read_buf);
                         ret ret(read_buf)
