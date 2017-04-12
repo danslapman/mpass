@@ -30,7 +30,7 @@ fn rand_string(len: usize) -> String {
 
 fn main() {
     let mpass_app = clap_app!(mpass =>
-        (version: "0.5")
+        (version: "0.6")
         (author: "Daniel Slapman <danslapman@gmail.com>")
         (about: "Console password keeper")
         (@subcommand add =>

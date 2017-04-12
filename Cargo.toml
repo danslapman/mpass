@@ -1,6 +1,6 @@
 [package]
 name = "mpass"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Daniil Smirnov <danslapman@gmail.com>"]
 
 [dependencies]
