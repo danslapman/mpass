@@ -3,8 +3,7 @@ use std::io::{Read, Write};
 
 use domain::Record;
 
-use bincode::SizeLimit;
-use bincode::rustc_serialize::{encode, decode};
+use bincode::{serialize, deserialize, Infinite};
 use crypter::{encrypt, decrypt};
 use rand::{ Rng, OsRng };
 
@@ -21,7 +20,7 @@ impl Store {
                 let _ = f.read_to_end(&mut contents);
                 let (iv, data) = contents.split_at(16);
                 let decrypted_data = decrypt(data, self.key.as_slice(), iv).expect("Error while decrypting");
-                let entries: Vec<Record> = decode(decrypted_data.as_slice()).expect("Error while decoding");
+                let entries: Vec<Record> = deserialize(decrypted_data.as_slice()).expect("Error while decoding");
                 entries
             },
             Err(_) => Vec::<Record>::new()
@@ -30,7 +29,7 @@ impl Store {
     }
     
     fn write_all(&self, entries: Vec<Record>) -> () {
-        let encoded_entries = encode(&entries, SizeLimit::Infinite).expect("Error while encoding");
+        let encoded_entries = serialize(&entries, Infinite).expect("Error while encoding");
         
         let mut iv: [u8; 16] = [0; 16];
         let mut rng = OsRng::new().expect("Failed to create random number generator");
