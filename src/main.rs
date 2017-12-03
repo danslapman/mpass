@@ -30,7 +30,7 @@ fn rand_string(len: usize) -> String {
 
 fn main() {
     let mpass_app = clap_app!(mpass =>
-        (version: "0.6")
+        (version: "0.6.1")
         (author: "Daniel Slapman <danslapman@gmail.com>")
         (about: "Console password keeper")
         (@subcommand add =>
@@ -47,6 +47,12 @@ fn main() {
             (help: "Creates new named command with given command line")
             (@arg name: +required +takes_value)
             (@arg command: +required +takes_value)
+        )
+        (@subcommand updpass =>
+            (about: "Updates password in existing entry")
+            (help: "Updates password in existing entry")
+            (@arg domain: +required +takes_value)
+            (@arg password: +required +takes_value)
         )
         (@subcommand show =>
             (about: "Display an entry by domain")
@@ -159,6 +165,21 @@ fn main() {
             match store.persist(entry) {
                 false => println!("An item associated with this name already exist"),
                 _ => ()
+            }
+        },
+        Some("updpass") => {
+            let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
+            let domain = value_t!(sm, "domain", String).expect("Domain");
+            let password = value_t!(sm, "password", String).expect("Password");
+            match store.read_credentials(domain) {
+                Some(Record::Credentials {domain: d, username: u, ..}) => {
+                    let updated = Record::Credentials {domain: d.clone(), username: u, password: password};
+                    match store.update(updated) {
+                        true => println!("Item named '{}' deleted", d),
+                        false => println!("There is no item associated with this name")
+                    }
+                },
+                _ => println!("There is no credentials associated with this domain")
             }
         },
         Some("show") => {

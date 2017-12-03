@@ -76,6 +76,25 @@ impl Store {
         }
     }
 
+    pub fn update(&self, entry: Record) -> bool {
+        let mut entries = self.read_all();
+        let existing = entries.clone()
+            .into_iter()
+            .find(|i| i.get_name() == entry.get_name());
+        match existing {
+            None => false,
+            Some(rec) => {
+                let pos = entries.iter()
+                    .position(|x| *x == rec)
+                    .expect("Position failed after find");
+                entries.remove(pos);
+                entries.push(entry);
+                self.write_all(entries);
+                true
+            }
+        }
+    }
+
     pub fn read_credentials(&self, domain: String) -> Option<Record> {
         self.read_all().into_iter().fold(None, move |acc, el| {
             match el {
