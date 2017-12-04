@@ -48,7 +48,7 @@ fn main() {
             (@arg name: +required +takes_value)
             (@arg command: +required +takes_value)
         )
-        (@subcommand update =>
+        (@subcommand updatepass =>
             (about: "Updates password in existing entry")
             (help: "Updates password in existing entry")
             (@arg domain: +required +takes_value)
@@ -167,7 +167,7 @@ fn main() {
                 _ => ()
             }
         },
-        Some("update") => {
+        Some("updatepass") => {
             let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
             let password = value_t!(sm, "password", String).expect("Password");
