@@ -48,7 +48,7 @@ fn main() {
             (@arg name: +required +takes_value)
             (@arg command: +required +takes_value)
         )
-        (@subcommand updpass =>
+        (@subcommand updatepass =>
             (about: "Updates password in existing entry")
             (help: "Updates password in existing entry")
             (@arg domain: +required +takes_value)
@@ -167,7 +167,7 @@ fn main() {
                 _ => ()
             }
         },
-        Some("updpass") => {
+        Some("updatepass") => {
             let sm = matches.subcommand_matches(matches.subcommand_name().unwrap()).unwrap();
             let domain = value_t!(sm, "domain", String).expect("Domain");
             let password = value_t!(sm, "password", String).expect("Password");
@@ -175,7 +175,7 @@ fn main() {
                 Some(Record::Credentials {domain: d, username: u, ..}) => {
                     let updated = Record::Credentials {domain: d.clone(), username: u, password: password};
                     match store.update(updated) {
-                        true => println!("Item named '{}' deleted", d),
+                        true => println!("Item named '{}' updated", d),
                         false => println!("There is no item associated with this name")
                     }
                 },
