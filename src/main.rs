@@ -7,6 +7,7 @@ extern crate yaml_rust;
 extern crate crypto;
 extern crate rand;
 extern crate serde_json;
+extern crate dirs;
 
 pub mod domain;
 pub mod store;
@@ -91,7 +92,7 @@ fn main() {
         )
     );
 
-    let home_dir = std::env::home_dir().expect("Impossible to get your home dir!");
+    let home_dir = dirs::home_dir().expect("Impossible to get your home dir!");
     let mpass_dir = home_dir.join(".mpass");
 
     let mut bin_key = Vec::<u8>::new();
