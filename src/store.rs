@@ -3,9 +3,9 @@ use std::io::{Read, Write};
 
 use domain::Record;
 
-use bincode::{serialize, deserialize, Infinite};
+use bincode::{serialize, deserialize};
 use crypter::{encrypt, decrypt};
-use rand::{ Rng, OsRng };
+use rand::{thread_rng, RngCore};
 
 pub struct Store {
     pub path: String,
@@ -29,10 +29,10 @@ impl Store {
     }
     
     fn write_all(&self, entries: Vec<Record>) -> () {
-        let encoded_entries = serialize(&entries, Infinite).expect("Error while encoding");
+        let encoded_entries = serialize(&entries).expect("Error while encoding");
         
         let mut iv: [u8; 16] = [0; 16];
-        let mut rng = OsRng::new().expect("Failed to create random number generator");
+        let mut rng = thread_rng();//.expect("Failed to create random number generator");
         rng.fill_bytes(&mut iv);
         
         let mut encrypted_entries = encrypt(encoded_entries.as_slice(), self.key.as_slice(), &iv)

@@ -21,7 +21,7 @@ use std::path::Path;
 use std::io::{self, Read, Write};
 use std::process::{Command, exit};
 use yaml_rust::YamlLoader;
-use rand::{ Rng, OsRng };
+use rand::{thread_rng, Rng, RngCore};
 use rustc_serialize::base64::*;
 
 fn rand_string(len: usize) -> String {
@@ -99,7 +99,7 @@ fn main() {
     let _ = File::open(mpass_dir.join("key.bin")).map(|mut f| f.read_to_end(&mut bin_key));
     if bin_key.len() == 0 {
         let mut rnd_key: [u8; 32] = [0; 32];
-        let mut rng = OsRng::new().expect("Failed to create random number generator");
+        let mut rng = thread_rng();
         rng.fill_bytes(&mut rnd_key);
         bin_key = Vec::from(&rnd_key[..]);
         let _ = File::create(mpass_dir.join("key.bin")).expect("Error creating key file")
