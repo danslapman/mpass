@@ -26,7 +26,7 @@ use rustc_serialize::base64::*;
 
 fn rand_string(len: usize) -> String {
     let mut rng = rand::thread_rng();
-    (0..len).map(|_| rng.gen_range(b'!', b'~') as char).collect()
+    (0..len).map(|_| rng.gen_range(b'!'.. b'~') as char).collect()
 }
 
 fn main() {
